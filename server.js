@@ -22,6 +22,19 @@ app.post('/login', (req, res) => {
     }
 });
 
+// Register endpoint
+app.post('/register', (req, res) => {
+    const { username, password } = req.body;
+    const userExists = users.find(user => user.username === username);
+
+    if (userExists) {
+        res.status(400).json({ message: 'Username already exists' });
+    } else {
+        users.push({ username, password, rewards: 0 });
+        res.json({ message: 'User registered successfully' });
+    }
+});
+
 // Add rewards endpoint
 app.post('/add-reward', (req, res) => {
     const { username, reward } = req.body;
