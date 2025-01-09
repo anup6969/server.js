@@ -3,9 +3,12 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 
 const app = express();
+
+// Middleware
 app.use(bodyParser.json());
 app.use(cors());
 
+// Mock users database
 let users = [{ username: 'testuser', password: 'password123', rewards: 0 }];
 
 // Login endpoint
@@ -44,7 +47,13 @@ app.post('/withdraw', (req, res) => {
     }
 });
 
+// Root endpoint for health check
+app.get('/', (req, res) => {
+    res.send('Server is running!');
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Server is running on port ${PORT}`);
 });
