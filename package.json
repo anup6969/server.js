@@ -4,14 +4,13 @@
   "description": "A backend application for user authentication",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "postinstall": "npm install" 
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^4.18.2",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
-    "cors": "^2.8.5" 
+    "cors": "^2.8.5"
   },
   "engines": {
     "node": ">=14"
