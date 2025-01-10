@@ -2,9 +2,11 @@ const express = require("express");
 const bcrypt = require("bcryptjs"); // Use bcryptjs for better compatibility
 const bodyParser = require("body-parser");
 const cors = require("cors");
-app.use(cors());
 
 const app = express();
+
+// Middleware
+app.use(cors());
 app.use(bodyParser.json());
 
 // Simulated in-memory database for demo purposes
