@@ -1,6 +1,8 @@
 const express = require("express");
 const bcrypt = require("bcryptjs"); // Use bcryptjs for better compatibility
 const bodyParser = require("body-parser");
+const cors = require("cors");
+app.use(cors());
 
 const app = express();
 app.use(bodyParser.json());
