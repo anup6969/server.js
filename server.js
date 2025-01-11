@@ -1,5 +1,6 @@
 const express = require("express");
-const bcrypt = require("bcryptjs"); // Use bcryptjs for better compatibility
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
@@ -9,38 +10,42 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Simulated in-memory database for demo purposes
-const users = [];
+// MongoDB Connection
+mongoose
+    .connect("mongodb+srv://9064686123:9064686123a@cluster0.zggpo.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0", {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    })
+    .then(() => console.log("Connected to MongoDB!"))
+    .catch((error) => console.error("MongoDB connection error:", error));
 
-// Initialize with default admin credentials
-(async () => {
-    const adminPassword = await bcrypt.hash("admin123", 10);
-    users.push({
-        username: "admin",
-        password: adminPassword,
-        role: "admin",
-    });
-})();
+// Define User Schema and Model
+const userSchema = new mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+});
+
+const User = mongoose.model("User", userSchema);
 
 // Register User
 app.post("/register", async (req, res) => {
     const { username, password } = req.body;
 
-    // Validate input
     if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required." });
     }
 
-    // Check if user already exists
-    const existingUser = users.find((user) => user.username === username);
-    if (existingUser) {
-        return res.status(400).json({ message: "Username already exists." });
-    }
-
     try {
+        // Check if user already exists
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ message: "Username already exists." });
+        }
+
         // Hash password and save user
         const hashedPassword = await bcrypt.hash(password, 10);
-        users.push({ username, password: hashedPassword, role: "user" }); // Default role is "user"
+        const newUser = new User({ username, password: hashedPassword });
+        await newUser.save();
         res.status(200).json({ message: "Registration successful!" });
     } catch (error) {
         console.error("Error registering user:", error);
@@ -52,26 +57,21 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
 
-    // Validate input
     if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required." });
     }
 
-    // Check if user exists
-    const user = users.find((u) => u.username === username);
-    if (!user) {
-        return res.status(400).json({ message: "Invalid username or password." });
-    }
-
     try {
-        // Compare hashed passwords
+        // Find user in the database
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(400).json({ message: "Invalid username or password." });
+        }
+
+        // Compare hashed password
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (isPasswordValid) {
-            res.status(200).json({
-                message: "Login successful!",
-                rewards: 100, // Example reward
-                role: user.role, // Return user role
-            });
+            res.status(200).json({ message: "Login successful!", rewards: 100 }); // Example reward
         } else {
             res.status(400).json({ message: "Invalid username or password." });
         }
@@ -81,55 +81,8 @@ app.post("/login", async (req, res) => {
     }
 });
 
-// Admin Login
-app.post("/admin-login", async (req, res) => {
-    const { username, password } = req.body;
-
-    // Check if admin user exists
-    const user = users.find((u) => u.username === username && u.role === "admin");
-    if (!user) {
-        return res.status(400).json({ message: "Invalid admin credentials." });
-    }
-
-    try {
-        // Compare hashed passwords
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        if (isPasswordValid) {
-            res.status(200).json({ message: "Admin login successful!" });
-        } else {
-            res.status(400).json({ message: "Invalid admin credentials." });
-        }
-    } catch (error) {
-        console.error("Error logging in admin:", error);
-        res.status(500).json({ message: "Internal server error." });
-    }
-});
-
-// Fetch Withdrawal Requests (Simulated)
-app.get("/withdrawal-requests", (req, res) => {
-    // Simulated data for withdrawal requests
-    const withdrawalRequests = [
-        { username: "user1", id: "1234567890", token: 50, status: "Pending" },
-        { username: "user2", id: "0987654321", token: 100, status: "Completed" },
-    ];
-
-    res.status(200).json(withdrawalRequests);
-});
-
-// Summary Request (Handle user withdrawal requests)
-app.post("/summary-request", (req, res) => {
-    const { username, id, token } = req.body;
-
-    if (!username || !id || !token) {
-        return res.status(400).json({ message: "Username, ID, and token amount are required." });
-    }
-
-    console.log(`Withdrawal request received: ${username}, ID: ${id}, Token: ${token}`);
-    res.status(200).json({ message: "Request submitted successfully!" });
-});
-
 // Start Server
-const PORT = process.env.PORT || 3000; // Use environment variable or default to 3000
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 });
